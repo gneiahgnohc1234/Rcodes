@@ -1668,7 +1668,7 @@ border-radius: 0px;
 </div>
 
 
-<p>The current time is Thu Jan 11 10:51:47 PM 2024.</p>
+<p>The current time is Thu Jan 11 11:22:16 PM 2024.</p>
 <div id="data-preparation" class="section level1">
 <h1>1.0 Data Preparation</h1>
 <div id="load-required-libraries" class="section level2">
@@ -1793,8 +1793,9 @@ border-radius: 0px;
 </div>
 <div id="calculate-total-ghg-over-total-gdp" class="section level2">
 <h2>1.0.3 Calculate total ghg over total gdp</h2>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>data<span class="sc">$</span>ghg_intensity <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(data[, <span class="dv">25</span><span class="sc">:</span><span class="dv">34</span>])<span class="sc">/</span><span class="fu">rowSums</span>(data[, <span class="dv">2</span><span class="sc">:</span><span class="dv">8</span>])</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">head</span>(data)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Sum Up all GHG and GDP of each sector then divide by each other</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>data<span class="sc">$</span>ghg_intensity <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(data[, <span class="dv">25</span><span class="sc">:</span><span class="dv">34</span>])<span class="sc">/</span><span class="fu">rowSums</span>(data[, <span class="dv">2</span><span class="sc">:</span><span class="dv">8</span>])</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">head</span>(data)</span></code></pre></div>
 <pre><code>##   Year Agriculture Construction Manufacturing Mining.and.quarrying Services
 ## 1 1991    47556.38     11919.35      61524.62             28690.04 144168.0
 ## 2 1992    50815.36     13198.19      65836.93             30004.63 160281.4
@@ -1864,11 +1865,12 @@ border-radius: 0px;
 <h1>2.0 Modelling</h1>
 <div id="multivariate-regression" class="section level2">
 <h2>2.0.1 Multivariate Regression</h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>predictor_variables <span class="ot">&lt;-</span> data[,<span class="dv">2</span><span class="sc">:</span><span class="dv">23</span>]</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data[,<span class="fu">ncol</span>(data)])</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">names</span>(response_variable) <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">glimpse</span>(predictor_variables)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Our response variable to be predicted will be ghg_intensity</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>predictor_variables <span class="ot">&lt;-</span> data[,<span class="dv">2</span><span class="sc">:</span><span class="dv">23</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data[,<span class="fu">ncol</span>(data)])</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">names</span>(response_variable) <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">glimpse</span>(predictor_variables)</span></code></pre></div>
 <pre><code>## Rows: 30
 ## Columns: 22
 ## $ Agriculture                       &lt;dbl&gt; 47556.38, 50815.36, 49223.00, 48290.…
@@ -1939,65 +1941,60 @@ border-radius: 0px;
 ## [4] &quot;Demand.Non.Energy&quot;    &quot;Supply.Coal.and.Coke&quot; &quot;Supply.Hydropower&quot;   
 ## [7] &quot;Supply.Biodiesel&quot;     &quot;Supply.Solar&quot;         &quot;Supply.Biogas&quot;</code></pre>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features[<span class="sc">-</span><span class="dv">1</span>], <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>))), <span class="at">data =</span> data)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features, <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>))), <span class="at">data =</span> data)</span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a></span>
 <span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co"># Print the summary of the model</span></span>
 <span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="fu">summary</span>(lm_model)</span></code></pre></div>
 <pre><code>## 
 ## Call:
-## lm(formula = as.formula(paste(response_variable, &quot;~&quot;, paste(selected_features[-1], 
+## lm(formula = as.formula(paste(response_variable, &quot;~&quot;, paste(selected_features, 
 ##     collapse = &quot; + &quot;))), data = data)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -19.225  -5.108  -1.749   4.025  20.119 
+## -19.115  -4.238  -0.967   4.681  18.315 
 ## 
 ## Coefficients:
 ##                        Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)           3.008e+02  1.214e+01  24.786   &lt;2e-16 ***
-## Services             -2.869e-05  1.285e-04  -0.223    0.826    
-## Demand.Transport     -6.199e-04  2.057e-03  -0.301    0.766    
-## Demand.Non.Energy    -3.222e-03  2.479e-03  -1.300    0.208    
-## Supply.Coal.and.Coke  1.146e-03  1.545e-03   0.742    0.466    
-## Supply.Hydropower    -9.270e-03  1.906e-02  -0.486    0.632    
-## Supply.Biodiesel     -4.785e-03  4.133e-02  -0.116    0.909    
-## Supply.Solar          1.792e-01  2.877e-01   0.623    0.540    
-## Supply.Biogas        -1.493e-01  2.233e-01  -0.669    0.511    
+## (Intercept)           3.028e+02  1.201e+01  25.218   &lt;2e-16 ***
+## Construction         -1.026e-03  7.665e-04  -1.339    0.196    
+## Services              2.973e-05  1.335e-04   0.223    0.826    
+## Demand.Transport     -2.880e-04  2.034e-03  -0.142    0.889    
+## Demand.Non.Energy    -7.667e-04  3.047e-03  -0.252    0.804    
+## Supply.Coal.and.Coke  8.741e-05  1.711e-03   0.051    0.960    
+## Supply.Hydropower    -1.328e-02  1.895e-02  -0.701    0.491    
+## Supply.Biodiesel     -1.419e-02  4.117e-02  -0.345    0.734    
+## Supply.Solar          4.556e-01  3.498e-01   1.302    0.208    
+## Supply.Biogas        -3.668e-01  2.728e-01  -1.345    0.194    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 10.55 on 21 degrees of freedom
-## Multiple R-squared:  0.7599, Adjusted R-squared:  0.6685 
-## F-statistic: 8.309 on 8 and 21 DF,  p-value: 4.806e-05</code></pre>
+## Residual standard error: 10.36 on 20 degrees of freedom
+## Multiple R-squared:  0.7797, Adjusted R-squared:  0.6805 
+## F-statistic: 7.864 on 9 and 20 DF,  p-value: 6.761e-05</code></pre>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Checking if data is overfit by cross validation</span></span>
 <span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co"># Load required libraries</span></span>
 <span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co"># install.packages(&quot;caret&quot;)</span></span>
-<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="fu">library</span>(caret)</span></code></pre></div>
-<pre><code>## Warning: package &#39;caret&#39; was built under R version 4.3.2</code></pre>
-<pre><code>## Loading required package: lattice</code></pre>
-<pre><code>## 
-## Attaching package: &#39;caret&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     lift</code></pre>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="co"># Set up cross-validation</span></span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)  <span class="co"># for reproducibility</span></span>
-<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">trainControl</span>(<span class="at">method =</span> <span class="st">&quot;cv&quot;</span>, <span class="at">number =</span> <span class="dv">5</span>)  <span class="co"># 5-fold cross-validation</span></span>
-<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a></span>
-<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a><span class="co"># Train the model using cross-validation</span></span>
-<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>lm_model_cv <span class="ot">&lt;-</span> <span class="fu">train</span>(</span>
-<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>  <span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features[<span class="sc">-</span><span class="dv">1</span>], <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>))),</span>
-<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
-<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>,</span>
-<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a>  <span class="at">trControl =</span> cv</span>
-<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a>)</span>
-<span id="cb25-12"><a href="#cb25-12" tabindex="-1"></a></span>
-<span id="cb25-13"><a href="#cb25-13" tabindex="-1"></a><span class="co"># Print cross-validated results</span></span>
-<span id="cb25-14"><a href="#cb25-14" tabindex="-1"></a><span class="fu">print</span>(lm_model_cv)</span></code></pre></div>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="co"># Set up cross-validation</span></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)  <span class="co"># for reproducibility</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>cv <span class="ot">&lt;-</span> <span class="fu">trainControl</span>(<span class="at">method =</span> <span class="st">&quot;cv&quot;</span>, <span class="at">number =</span> <span class="dv">5</span>)  <span class="co"># 5-fold cross-validation</span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co"># Train the model using cross-validation</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a>lm_model_cv <span class="ot">&lt;-</span> <span class="fu">train</span>(</span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a>  <span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features, <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>))),</span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;lm&quot;</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a>  <span class="at">trControl =</span> cv</span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a>)</span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a><span class="co"># Print cross-validated results</span></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a><span class="fu">print</span>(lm_model_cv)</span></code></pre></div>
 <pre><code>## Linear Regression 
 ## 
 ## 30 samples
-##  8 predictor
+##  9 predictor
 ## 
 ## No pre-processing
 ## Resampling: Cross-Validated (5 fold) 
@@ -2005,85 +2002,85 @@ border-radius: 0px;
 ## Resampling results:
 ## 
 ##   RMSE      Rsquared   MAE     
-##   13.22825  0.4824215  10.84046
+##   15.00534  0.4776057  11.56251
 ## 
 ## Tuning parameter &#39;intercept&#39; was held constant at a value of TRUE</code></pre>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>residuals <span class="ot">&lt;-</span> <span class="fu">resid</span>(lm_model)</span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a></span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a><span class="co"># Plot Fitted values vs Actual values</span></span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="fu">plot</span>(lm_model<span class="sc">$</span>fitted.values, data<span class="sc">$</span>ghg_intensity,</span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Fitted Values vs Actual Values&quot;</span>,</span>
-<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Fitted Values&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Actual Values&quot;</span>,</span>
-<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">pch =</span> <span class="dv">20</span>)</span>
-<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a></span>
-<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a><span class="co"># Add a line to show where fitted values equal actual values</span></span>
-<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>)</span>
-<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a></span>
-<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a><span class="co"># This will add points with an offset for visibility</span></span>
-<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a><span class="fu">points</span>(lm_model<span class="sc">$</span>fitted.values, data<span class="sc">$</span>ghg_intensity <span class="sc">+</span> residuals,</span>
-<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">pch =</span> <span class="dv">4</span>)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" width="672" /></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>residuals <span class="ot">&lt;-</span> <span class="fu">resid</span>(lm_model)</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="co"># Plot Fitted values vs Actual values</span></span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="fu">plot</span>(lm_model<span class="sc">$</span>fitted.values, data<span class="sc">$</span>ghg_intensity,</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Fitted Values vs Actual Values&quot;</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Fitted Values&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Actual Values&quot;</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">pch =</span> <span class="dv">20</span>)</span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a><span class="co"># Add a line to show where fitted values equal actual values</span></span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>)</span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a></span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a><span class="co"># Add points with an offset for visibility</span></span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a><span class="fu">points</span>(lm_model<span class="sc">$</span>fitted.values, data<span class="sc">$</span>ghg_intensity <span class="sc">+</span> residuals,</span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">pch =</span> <span class="dv">4</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" width="672" /></p>
 </div>
 <div id="model-evaluation---multivariate-regression" class="section level2">
 <h2>2.0.2 Model Evaluation - Multivariate Regression</h2>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="co"># Predict the response variable for the entire dataset</span></span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(lm_model, <span class="at">newdata =</span> data[selected_features])</span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a><span class="co"># Evaluate metrics</span></span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>mse <span class="ot">&lt;-</span> <span class="fu">mean</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(mse)</span>
-<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>mae <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions))</span>
-<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a>r_squared <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> <span class="fu">mean</span>(data<span class="sc">$</span>ghg_intensity))<span class="sc">^</span><span class="dv">2</span>))</span>
-<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a></span>
-<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a><span class="co"># Print the metrics</span></span>
-<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Squared Error (MSE):&quot;</span>, mse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Mean Squared Error (MSE): 77.92738</code></pre>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Root Mean Squared Error (RMSE):&quot;</span>, rmse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Root Mean Squared Error (RMSE): 8.827649</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Absolute Error (MAE):&quot;</span>, mae, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Mean Absolute Error (MAE): 6.916043</code></pre>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R-squared (R²):&quot;</span>, r_squared, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## R-squared (R²): 0.7599265</code></pre>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="co"># Print a comparison between actual and predicted values</span></span>
-<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Actual =</span> data<span class="sc">$</span>ghg_intensity, <span class="at">Predicted =</span> predictions)</span>
-<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a><span class="fu">print</span>(comparison)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="co"># Predict the response variable for the entire dataset</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(lm_model, <span class="at">newdata =</span> data[selected_features])</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="co"># Evaluate metrics</span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>mse <span class="ot">&lt;-</span> <span class="fu">mean</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(mse)</span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a>mae <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions))</span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a>r_squared <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> <span class="fu">mean</span>(data<span class="sc">$</span>ghg_intensity))<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a><span class="co"># Print the metrics</span></span>
+<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Squared Error (MSE):&quot;</span>, mse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Mean Squared Error (MSE): 71.51756</code></pre>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Root Mean Squared Error (RMSE):&quot;</span>, rmse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Root Mean Squared Error (RMSE): 8.456805</code></pre>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Absolute Error (MAE):&quot;</span>, mae, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Mean Absolute Error (MAE): 6.484116</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R-squared (R²):&quot;</span>, r_squared, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## R-squared (R²): 0.7796735</code></pre>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="co"># Print a comparison between actual and predicted values</span></span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Actual =</span> data<span class="sc">$</span>ghg_intensity, <span class="at">Predicted =</span> predictions)</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a><span class="fu">print</span>(comparison)</span></code></pre></div>
 <pre><code>##      Actual Predicted
-## 1  301.7638  287.8733
-## 2  285.2276  286.7883
-## 3  279.9281  282.6414
-## 4  279.3573  281.2951
-## 5  273.6657  276.8991
-## 6  277.5227  280.5729
-## 7  273.4095  278.2424
-## 8  298.6841  278.8134
-## 9  296.4379  276.3185
-## 10 255.9316  275.1563
-## 11 263.9919  274.2295
-## 12 265.0665  275.2846
-## 13 265.0170  277.0424
-## 14 271.8413  277.7131
-## 15 282.6497  278.2624
-## 16 277.7367  275.2410
-## 17 282.1531  274.9203
-## 18 286.0687  274.0630
-## 19 264.3845  272.2735
-## 20 268.8321  277.0310
-## 21 270.1808  266.1119
-## 22 260.2901  260.9733
-## 23 268.9639  260.3450
-## 24 267.1183  263.4703
-## 25 265.7491  265.0419
-## 26 250.9269  254.8909
-## 27 233.2304  236.1309
-## 28 235.3954  232.5945
-## 29 228.2721  224.3776
-## 30 238.0538  243.2529</code></pre>
+## 1  301.7638  287.4602
+## 2  285.2276  286.4499
+## 3  279.9281  284.2969
+## 4  279.3573  280.6486
+## 5  273.6657  276.8629
+## 6  277.5227  275.8779
+## 7  273.4095  274.7950
+## 8  298.6841  280.3690
+## 9  296.4379  278.2762
+## 10 255.9316  275.0469
+## 11 263.9919  274.1603
+## 12 265.0665  275.9937
+## 13 265.0170  276.2491
+## 14 271.8413  276.1719
+## 15 282.6497  279.3621
+## 16 277.7367  278.4484
+## 17 282.1531  277.3731
+## 18 286.0687  276.1854
+## 19 264.3845  275.3123
+## 20 268.8321  271.0327
+## 21 270.1808  266.5075
+## 22 260.2901  260.4783
+## 23 268.9639  264.1075
+## 24 267.1183  265.9691
+## 25 265.7491  259.4963
+## 26 250.9269  254.8868
+## 27 233.2304  235.9834
+## 28 235.3954  231.0136
+## 29 228.2721  221.7001
+## 30 238.0538  247.3356</code></pre>
 </div>
 <div id="random-forest" class="section level2">
 <h2>2.0.3 Random Forest</h2>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="co"># Install and load the necessary library</span></span>
-<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="co"># install.packages(&quot;randomForest&quot;)</span></span>
-<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a><span class="co"># Install and load the necessary library</span></span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a><span class="co"># install.packages(&quot;randomForest&quot;)</span></span>
+<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span></code></pre></div>
 <pre><code>## Warning: package &#39;randomForest&#39; was built under R version 4.3.2</code></pre>
 <pre><code>## randomForest 4.7-1.1</code></pre>
 <pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
@@ -2095,112 +2092,107 @@ border-radius: 0px;
 <pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
 ## 
 ##     margin</code></pre>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a><span class="co"># Assuming you have predictor_variables and response_variable defined</span></span>
-<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>predictor_variables <span class="ot">&lt;-</span> data[,<span class="dv">2</span><span class="sc">:</span><span class="dv">23</span>]</span>
-<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data[,<span class="fu">ncol</span>(data)])</span>
-<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a><span class="fu">names</span>(response_variable) <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
-<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a></span>
-<span id="cb45-6"><a href="#cb45-6" tabindex="-1"></a><span class="co"># Compute the correlation matrix</span></span>
-<span id="cb45-7"><a href="#cb45-7" tabindex="-1"></a>correlation <span class="ot">&lt;-</span> <span class="fu">cor</span>(predictor_variables, response_variable)</span>
-<span id="cb45-8"><a href="#cb45-8" tabindex="-1"></a></span>
-<span id="cb45-9"><a href="#cb45-9" tabindex="-1"></a><span class="co"># Identify highly correlated variables</span></span>
-<span id="cb45-10"><a href="#cb45-10" tabindex="-1"></a>highly_correlated <span class="ot">&lt;-</span> <span class="fu">rownames</span>(correlation)[correlation <span class="sc">&gt;</span> <span class="fl">0.7</span> <span class="sc">|</span> correlation <span class="sc">&lt;</span> <span class="sc">-</span><span class="fl">0.7</span>]</span>
-<span id="cb45-11"><a href="#cb45-11" tabindex="-1"></a></span>
-<span id="cb45-12"><a href="#cb45-12" tabindex="-1"></a><span class="co"># Fit a random forest model using selected features</span></span>
-<span id="cb45-13"><a href="#cb45-13" tabindex="-1"></a>selected_features <span class="ot">&lt;-</span> highly_correlated</span>
-<span id="cb45-14"><a href="#cb45-14" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
-<span id="cb45-15"><a href="#cb45-15" tabindex="-1"></a>rf_formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features[<span class="sc">-</span><span class="dv">1</span>], <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>)))</span>
-<span id="cb45-16"><a href="#cb45-16" tabindex="-1"></a>rf_model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(rf_formula, <span class="at">data =</span> data)</span>
-<span id="cb45-17"><a href="#cb45-17" tabindex="-1"></a></span>
-<span id="cb45-18"><a href="#cb45-18" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
-<span id="cb45-19"><a href="#cb45-19" tabindex="-1"></a>cv_results <span class="ot">&lt;-</span> randomForest<span class="sc">::</span><span class="fu">randomForest</span>(rf_formula, <span class="at">data =</span> data, <span class="at">nfold =</span> <span class="dv">5</span>)</span>
-<span id="cb45-20"><a href="#cb45-20" tabindex="-1"></a>cv_results</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="co"># Fit a random forest model using selected features</span></span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a>selected_features <span class="ot">&lt;-</span> highly_correlated</span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a>selected_features</span></code></pre></div>
+<pre><code>## [1] &quot;Construction&quot;         &quot;Services&quot;             &quot;Demand.Transport&quot;    
+## [4] &quot;Demand.Non.Energy&quot;    &quot;Supply.Coal.and.Coke&quot; &quot;Supply.Hydropower&quot;   
+## [7] &quot;Supply.Biodiesel&quot;     &quot;Supply.Solar&quot;         &quot;Supply.Biogas&quot;</code></pre>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a>response_variable <span class="ot">&lt;-</span> <span class="st">&quot;ghg_intensity&quot;</span></span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>rf_formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(response_variable, <span class="st">&quot;~&quot;</span>, <span class="fu">paste</span>(selected_features, <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>)))</span>
+<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a>rf_model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(rf_formula, <span class="at">data =</span> data)</span>
+<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a></span>
+<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a><span class="co"># Perform cross-validation</span></span>
+<span id="cb42-7"><a href="#cb42-7" tabindex="-1"></a>cv_results <span class="ot">&lt;-</span> randomForest<span class="sc">::</span><span class="fu">randomForest</span>(rf_formula, <span class="at">data =</span> data, <span class="at">nfold =</span> <span class="dv">5</span>)</span>
+<span id="cb42-8"><a href="#cb42-8" tabindex="-1"></a>cv_results</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = rf_formula, data = data, nfold = 5) 
 ##                Type of random forest: regression
 ##                      Number of trees: 500
-## No. of variables tried at each split: 2
+## No. of variables tried at each split: 3
 ## 
-##           Mean of squared residuals: 101.9718
-##                     % Var explained: 68.59</code></pre>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a><span class="co"># Print the importance of variables</span></span>
-<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">importance</span>(rf_model))</span></code></pre></div>
+##           Mean of squared residuals: 91.81018
+##                     % Var explained: 71.72</code></pre>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="co"># Print the importance of variables</span></span>
+<span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">importance</span>(rf_model))</span></code></pre></div>
 <pre><code>##                      IncNodePurity
-## Services                 1457.4977
-## Demand.Transport          589.5108
-## Demand.Non.Energy        1560.3850
-## Supply.Coal.and.Coke     1370.1107
-## Supply.Hydropower        1190.7090
-## Supply.Biodiesel          505.7043
-## Supply.Solar              967.0333
-## Supply.Biogas            1004.6065</code></pre>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a><span class="co"># Print the summary of the model</span></span>
-<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a><span class="fu">print</span>(rf_model)</span></code></pre></div>
+## Construction             1262.6821
+## Services                 1058.0150
+## Demand.Transport          429.2109
+## Demand.Non.Energy        1707.6664
+## Supply.Coal.and.Coke     1223.2455
+## Supply.Hydropower        1216.2601
+## Supply.Biodiesel          312.6808
+## Supply.Solar              864.2297
+## Supply.Biogas             699.2852</code></pre>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="co"># Print the summary of the model</span></span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a><span class="fu">print</span>(rf_model)</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = rf_formula, data = data) 
 ##                Type of random forest: regression
 ##                      Number of trees: 500
-## No. of variables tried at each split: 2
+## No. of variables tried at each split: 3
 ## 
-##           Mean of squared residuals: 98.22124
-##                     % Var explained: 69.74</code></pre>
+##           Mean of squared residuals: 93.03591
+##                     % Var explained: 71.34</code></pre>
 </div>
 <div id="model-evaluation---random-forest" class="section level2">
 <h2>2.0.4 Model Evaluation - Random Forest</h2>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a><span class="co"># Predict the response variable for the entire dataset</span></span>
-<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_model, <span class="at">newdata =</span> data[selected_features])</span>
-<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a></span>
-<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a><span class="co"># Evaluate metrics</span></span>
-<span id="cb51-5"><a href="#cb51-5" tabindex="-1"></a>mse <span class="ot">&lt;-</span> <span class="fu">mean</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb51-6"><a href="#cb51-6" tabindex="-1"></a>rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(mse)</span>
-<span id="cb51-7"><a href="#cb51-7" tabindex="-1"></a>mae <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions))</span>
-<span id="cb51-8"><a href="#cb51-8" tabindex="-1"></a>r_squared <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> <span class="fu">mean</span>(data<span class="sc">$</span>ghg_intensity))<span class="sc">^</span><span class="dv">2</span>))</span>
-<span id="cb51-9"><a href="#cb51-9" tabindex="-1"></a></span>
-<span id="cb51-10"><a href="#cb51-10" tabindex="-1"></a><span class="co"># Print the metrics</span></span>
-<span id="cb51-11"><a href="#cb51-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Squared Error (MSE):&quot;</span>, mse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Mean Squared Error (MSE): 26.93189</code></pre>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Root Mean Squared Error (RMSE):&quot;</span>, rmse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Root Mean Squared Error (RMSE): 5.189594</code></pre>
-<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Absolute Error (MAE):&quot;</span>, mae, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## Mean Absolute Error (MAE): 4.240178</code></pre>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R-squared (R²):&quot;</span>, r_squared, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
-<pre><code>## R-squared (R²): 0.91703</code></pre>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" tabindex="-1"></a><span class="co"># Print a comparison between actual and predicted values</span></span>
-<span id="cb59-2"><a href="#cb59-2" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Actual =</span> data<span class="sc">$</span>ghg_intensity, <span class="at">Predicted =</span> predictions)</span>
-<span id="cb59-3"><a href="#cb59-3" tabindex="-1"></a><span class="fu">print</span>(comparison)</span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="co"># Predict the response variable for the entire dataset</span></span>
+<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_model, <span class="at">newdata =</span> data[selected_features])</span>
+<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a><span class="co"># Evaluate metrics</span></span>
+<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a>mse <span class="ot">&lt;-</span> <span class="fu">mean</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a>rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(mse)</span>
+<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a>mae <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions))</span>
+<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a>r_squared <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> predictions)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((data<span class="sc">$</span>ghg_intensity <span class="sc">-</span> <span class="fu">mean</span>(data<span class="sc">$</span>ghg_intensity))<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a></span>
+<span id="cb48-10"><a href="#cb48-10" tabindex="-1"></a><span class="co"># Print the metrics</span></span>
+<span id="cb48-11"><a href="#cb48-11" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Squared Error (MSE):&quot;</span>, mse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Mean Squared Error (MSE): 22.2033</code></pre>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Root Mean Squared Error (RMSE):&quot;</span>, rmse, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Root Mean Squared Error (RMSE): 4.712038</code></pre>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Mean Absolute Error (MAE):&quot;</span>, mae, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Mean Absolute Error (MAE): 3.754709</code></pre>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R-squared (R²):&quot;</span>, r_squared, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## R-squared (R²): 0.9315976</code></pre>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" tabindex="-1"></a><span class="co"># Print a comparison between actual and predicted values</span></span>
+<span id="cb56-2"><a href="#cb56-2" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Actual =</span> data<span class="sc">$</span>ghg_intensity, <span class="at">Predicted =</span> predictions)</span>
+<span id="cb56-3"><a href="#cb56-3" tabindex="-1"></a><span class="fu">print</span>(comparison)</span></code></pre></div>
 <pre><code>##      Actual Predicted
-## 1  301.7638  291.6534
-## 2  285.2276  287.9592
-## 3  279.9281  282.2693
-## 4  279.3573  281.9845
-## 5  273.6657  276.4928
-## 6  277.5227  283.0981
-## 7  273.4095  278.3698
-## 8  298.6841  288.3086
-## 9  296.4379  285.9052
-## 10 255.9316  265.5884
-## 11 263.9919  265.2277
-## 12 265.0665  267.0023
-## 13 265.0170  268.6370
-## 14 271.8413  275.3807
-## 15 282.6497  278.0441
-## 16 277.7367  276.2770
-## 17 282.1531  277.8866
-## 18 286.0687  277.4845
-## 19 264.3845  270.6689
-## 20 268.8321  270.3938
-## 21 270.1808  269.6571
-## 22 260.2901  265.3398
-## 23 268.9639  267.0242
-## 24 267.1183  265.3587
-## 25 265.7491  262.6018
-## 26 250.9269  249.1560
-## 27 233.2304  238.4310
-## 28 235.3954  236.4083
-## 29 228.2721  235.1544
-## 30 238.0538  236.9664</code></pre>
+## 1  301.7638  293.6044
+## 2  285.2276  289.2551
+## 3  279.9281  283.1101
+## 4  279.3573  283.6798
+## 5  273.6657  276.3329
+## 6  277.5227  280.3336
+## 7  273.4095  274.0100
+## 8  298.6841  288.7690
+## 9  296.4379  287.5431
+## 10 255.9316  264.4226
+## 11 263.9919  265.5048
+## 12 265.0665  267.1250
+## 13 265.0170  267.9364
+## 14 271.8413  274.0355
+## 15 282.6497  279.1493
+## 16 277.7367  277.9411
+## 17 282.1531  278.2899
+## 18 286.0687  276.2814
+## 19 264.3845  268.9009
+## 20 268.8321  269.1544
+## 21 270.1808  268.5913
+## 22 260.2901  264.6609
+## 23 268.9639  267.2165
+## 24 267.1183  266.2464
+## 25 265.7491  262.0324
+## 26 250.9269  248.2487
+## 27 233.2304  238.5239
+## 28 235.3954  236.3813
+## 29 228.2721  235.3917
+## 30 238.0538  237.7362</code></pre>
 </div>
 <div id="arima-model-time-series-forecasting" class="section level2">
 <h2>2.0.5 ARIMA Model Time Series Forecasting</h2>
@@ -2208,22 +2200,22 @@ border-radius: 0px;
 <p>‘p’ is the order of the autoregressive component. ‘d’ is the order of
 differencing needed for stationarity. ‘q’ is the order of the moving
 average component.</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" tabindex="-1"></a>forecast_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb61-2"><a href="#cb61-2" tabindex="-1"></a></span>
-<span id="cb61-3"><a href="#cb61-3" tabindex="-1"></a><span class="cf">for</span> (feature <span class="cf">in</span> selected_features) {</span>
-<span id="cb61-4"><a href="#cb61-4" tabindex="-1"></a>    ts_data <span class="ot">&lt;-</span> <span class="fu">ts</span>(data[[feature]], <span class="at">start =</span> <span class="fu">min</span>(data<span class="sc">$</span>Year), <span class="at">frequency =</span> <span class="dv">1</span>)</span>
-<span id="cb61-5"><a href="#cb61-5" tabindex="-1"></a></span>
-<span id="cb61-6"><a href="#cb61-6" tabindex="-1"></a>    <span class="co"># Fit an ARIMA model to the training data</span></span>
-<span id="cb61-7"><a href="#cb61-7" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> <span class="fu">auto.arima</span>(ts_data)</span>
-<span id="cb61-8"><a href="#cb61-8" tabindex="-1"></a></span>
-<span id="cb61-9"><a href="#cb61-9" tabindex="-1"></a>    <span class="co"># Make forecasts on the test data</span></span>
-<span id="cb61-10"><a href="#cb61-10" tabindex="-1"></a>    forecast_values <span class="ot">&lt;-</span> <span class="fu">forecast</span>(fit, <span class="at">h =</span> <span class="dv">10</span>)</span>
-<span id="cb61-11"><a href="#cb61-11" tabindex="-1"></a></span>
-<span id="cb61-12"><a href="#cb61-12" tabindex="-1"></a>    forecast_list[[feature]] <span class="ot">&lt;-</span> forecast_values<span class="sc">$</span>mean</span>
-<span id="cb61-13"><a href="#cb61-13" tabindex="-1"></a>}</span>
-<span id="cb61-14"><a href="#cb61-14" tabindex="-1"></a></span>
-<span id="cb61-15"><a href="#cb61-15" tabindex="-1"></a>forecast_features <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(forecast_list)</span>
-<span id="cb61-16"><a href="#cb61-16" tabindex="-1"></a>forecast_features</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" tabindex="-1"></a>forecast_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb58-2"><a href="#cb58-2" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" tabindex="-1"></a><span class="cf">for</span> (feature <span class="cf">in</span> selected_features) {</span>
+<span id="cb58-4"><a href="#cb58-4" tabindex="-1"></a>    ts_data <span class="ot">&lt;-</span> <span class="fu">ts</span>(data[[feature]], <span class="at">start =</span> <span class="fu">min</span>(data<span class="sc">$</span>Year), <span class="at">frequency =</span> <span class="dv">1</span>)</span>
+<span id="cb58-5"><a href="#cb58-5" tabindex="-1"></a></span>
+<span id="cb58-6"><a href="#cb58-6" tabindex="-1"></a>    <span class="co"># Fit an ARIMA model to the training data</span></span>
+<span id="cb58-7"><a href="#cb58-7" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> <span class="fu">auto.arima</span>(ts_data)</span>
+<span id="cb58-8"><a href="#cb58-8" tabindex="-1"></a></span>
+<span id="cb58-9"><a href="#cb58-9" tabindex="-1"></a>    <span class="co"># Make forecasts on the test data</span></span>
+<span id="cb58-10"><a href="#cb58-10" tabindex="-1"></a>    forecast_values <span class="ot">&lt;-</span> <span class="fu">forecast</span>(fit, <span class="at">h =</span> <span class="dv">10</span>)</span>
+<span id="cb58-11"><a href="#cb58-11" tabindex="-1"></a></span>
+<span id="cb58-12"><a href="#cb58-12" tabindex="-1"></a>    forecast_list[[feature]] <span class="ot">&lt;-</span> forecast_values<span class="sc">$</span>mean</span>
+<span id="cb58-13"><a href="#cb58-13" tabindex="-1"></a>}</span>
+<span id="cb58-14"><a href="#cb58-14" tabindex="-1"></a></span>
+<span id="cb58-15"><a href="#cb58-15" tabindex="-1"></a>forecast_features <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(forecast_list)</span>
+<span id="cb58-16"><a href="#cb58-16" tabindex="-1"></a>forecast_features</span></code></pre></div>
 <pre><code>##    Construction Services Demand.Transport Demand.Non.Energy
 ## 1      46203.96 799536.6         19103.24          12175.14
 ## 2      41927.24 821382.2         19546.48          12545.28
@@ -2257,7 +2249,7 @@ average component.</p>
 ## 8            140
 ## 9            140
 ## 10           140</code></pre>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" tabindex="-1"></a><span class="fu">head</span>(forecast_features)</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" tabindex="-1"></a><span class="fu">head</span>(forecast_features)</span></code></pre></div>
 <pre><code>##   Construction Services Demand.Transport Demand.Non.Energy Supply.Coal.and.Coke
 ## 1     46203.96 799536.6         19103.24          12175.14             26017.68
 ## 2     41927.24 821382.2         19546.48          12545.28             27247.37
@@ -2272,53 +2264,53 @@ average component.</p>
 ## 4          2902.643             1363     232.7457           140
 ## 5          3041.303             1506     237.1513           140
 ## 6          3179.964             1649     261.7992           140</code></pre>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" tabindex="-1"></a><span class="co"># Use the trained regression model to make predictions for the next ten years</span></span>
-<span id="cb65-2"><a href="#cb65-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Forecasted values for GHG intensity by Multivariate Regression Model&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" tabindex="-1"></a><span class="co"># Use the trained regression model to make predictions for the next ten years</span></span>
+<span id="cb62-2"><a href="#cb62-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Forecasted values for GHG intensity by Multivariate Regression Model&quot;</span>)</span></code></pre></div>
 <pre><code>## [1] &quot;Forecasted values for GHG intensity by Multivariate Regression Model&quot;</code></pre>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" tabindex="-1"></a>predictions_lm <span class="ot">&lt;-</span> <span class="fu">predict</span>(lm_model, <span class="at">newdata =</span> forecast_features)</span>
-<span id="cb67-2"><a href="#cb67-2" tabindex="-1"></a>predictions_lm</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" tabindex="-1"></a>predictions_lm <span class="ot">&lt;-</span> <span class="fu">predict</span>(lm_model, <span class="at">newdata =</span> forecast_features)</span>
+<span id="cb64-2"><a href="#cb64-2" tabindex="-1"></a>predictions_lm</span></code></pre></div>
 <pre><code>##        1        2        3        4        5        6        7        8 
-## 237.7247 242.3207 239.0842 241.9072 240.0424 241.8042 240.7603 241.8871 
+## 244.1055 263.4058 260.9321 272.7966 272.1216 280.3125 281.1625 287.4135 
 ##        9       10 
-## 241.3345 242.0811</code></pre>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" tabindex="-1"></a><span class="co"># Use the trained random forest model to make predictions for the next ten years</span></span>
-<span id="cb69-2"><a href="#cb69-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Forecasted values for GHG intensity by Random Forest Model&quot;</span>)</span></code></pre></div>
+## 289.3256 294.5018</code></pre>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" tabindex="-1"></a><span class="co"># Use the trained random forest model to make predictions for the next ten years</span></span>
+<span id="cb66-2"><a href="#cb66-2" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Forecasted values for GHG intensity by Random Forest Model&quot;</span>)</span></code></pre></div>
 <pre><code>## [1] &quot;Forecasted values for GHG intensity by Random Forest Model&quot;</code></pre>
-<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" tabindex="-1"></a>predictions_rf <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_model, <span class="at">newdata =</span> forecast_features)</span>
-<span id="cb71-2"><a href="#cb71-2" tabindex="-1"></a>predictions_rf</span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" tabindex="-1"></a>predictions_rf <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_model, <span class="at">newdata =</span> forecast_features)</span>
+<span id="cb68-2"><a href="#cb68-2" tabindex="-1"></a>predictions_rf</span></code></pre></div>
 <pre><code>##        1        2        3        4        5        6        7        8 
-## 236.7025 236.7504 236.7504 236.7249 236.5397 236.5410 236.5038 236.5038 
+## 238.8847 239.0208 239.0013 238.9865 238.8225 238.8172 238.8172 238.7976 
 ##        9       10 
-## 236.5038 236.3843</code></pre>
-<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" tabindex="-1"></a><span class="co"># Get the forecasted GHG intensity in year 2030 for both models</span></span>
-<span id="cb73-2"><a href="#cb73-2" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2030</span></span>
-<span id="cb73-3"><a href="#cb73-3" tabindex="-1"></a></span>
-<span id="cb73-4"><a href="#cb73-4" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) {</span>
-<span id="cb73-5"><a href="#cb73-5" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Forecasted GHG intensity in year&quot;</span>, years[i], <span class="st">&quot;by Regression Model:&quot;</span>, predictions_lm[i]))</span>
-<span id="cb73-6"><a href="#cb73-6" tabindex="-1"></a>}</span></code></pre></div>
-<pre><code>## [1] &quot;Forecasted GHG intensity in year 2021 by Regression Model: 237.7247399642&quot;
-## [1] &quot;Forecasted GHG intensity in year 2022 by Regression Model: 242.320686368994&quot;
-## [1] &quot;Forecasted GHG intensity in year 2023 by Regression Model: 239.084220887609&quot;
-## [1] &quot;Forecasted GHG intensity in year 2024 by Regression Model: 241.907208063246&quot;
-## [1] &quot;Forecasted GHG intensity in year 2025 by Regression Model: 240.042371483409&quot;
-## [1] &quot;Forecasted GHG intensity in year 2026 by Regression Model: 241.804214210476&quot;
-## [1] &quot;Forecasted GHG intensity in year 2027 by Regression Model: 240.760319460794&quot;
-## [1] &quot;Forecasted GHG intensity in year 2028 by Regression Model: 241.887050267512&quot;
-## [1] &quot;Forecasted GHG intensity in year 2029 by Regression Model: 241.334502330178&quot;
-## [1] &quot;Forecasted GHG intensity in year 2030 by Regression Model: 242.081108497019&quot;</code></pre>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) {</span>
-<span id="cb75-2"><a href="#cb75-2" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Forecasted GHG intensity in year&quot;</span>, years[i], <span class="st">&quot;by Random Forest Model:&quot;</span>, predictions_rf[i]))</span>
-<span id="cb75-3"><a href="#cb75-3" tabindex="-1"></a>}</span></code></pre></div>
-<pre><code>## [1] &quot;Forecasted GHG intensity in year 2021 by Random Forest Model: 236.702479013657&quot;
-## [1] &quot;Forecasted GHG intensity in year 2022 by Random Forest Model: 236.750377522619&quot;
-## [1] &quot;Forecasted GHG intensity in year 2023 by Random Forest Model: 236.750377522619&quot;
-## [1] &quot;Forecasted GHG intensity in year 2024 by Random Forest Model: 236.724916832784&quot;
-## [1] &quot;Forecasted GHG intensity in year 2025 by Random Forest Model: 236.539712542297&quot;
-## [1] &quot;Forecasted GHG intensity in year 2026 by Random Forest Model: 236.541035837927&quot;
-## [1] &quot;Forecasted GHG intensity in year 2027 by Random Forest Model: 236.503831290773&quot;
-## [1] &quot;Forecasted GHG intensity in year 2028 by Random Forest Model: 236.503831290773&quot;
-## [1] &quot;Forecasted GHG intensity in year 2029 by Random Forest Model: 236.503831290773&quot;
-## [1] &quot;Forecasted GHG intensity in year 2030 by Random Forest Model: 236.384307218215&quot;</code></pre>
+## 238.7976 238.7976</code></pre>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" tabindex="-1"></a><span class="co"># Get the forecasted GHG intensity in year 2030 for both models</span></span>
+<span id="cb70-2"><a href="#cb70-2" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2030</span></span>
+<span id="cb70-3"><a href="#cb70-3" tabindex="-1"></a></span>
+<span id="cb70-4"><a href="#cb70-4" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) {</span>
+<span id="cb70-5"><a href="#cb70-5" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Forecasted GHG intensity in year&quot;</span>, years[i], <span class="st">&quot;by Regression Model:&quot;</span>, predictions_lm[i]))</span>
+<span id="cb70-6"><a href="#cb70-6" tabindex="-1"></a>}</span></code></pre></div>
+<pre><code>## [1] &quot;Forecasted GHG intensity in year 2021 by Regression Model: 244.105531812475&quot;
+## [1] &quot;Forecasted GHG intensity in year 2022 by Regression Model: 263.405810971076&quot;
+## [1] &quot;Forecasted GHG intensity in year 2023 by Regression Model: 260.932056804177&quot;
+## [1] &quot;Forecasted GHG intensity in year 2024 by Regression Model: 272.796570309162&quot;
+## [1] &quot;Forecasted GHG intensity in year 2025 by Regression Model: 272.121560654248&quot;
+## [1] &quot;Forecasted GHG intensity in year 2026 by Regression Model: 280.312528900631&quot;
+## [1] &quot;Forecasted GHG intensity in year 2027 by Regression Model: 281.162473478427&quot;
+## [1] &quot;Forecasted GHG intensity in year 2028 by Regression Model: 287.413547407759&quot;
+## [1] &quot;Forecasted GHG intensity in year 2029 by Regression Model: 289.325557397064&quot;
+## [1] &quot;Forecasted GHG intensity in year 2030 by Regression Model: 294.501774508404&quot;</code></pre>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) {</span>
+<span id="cb72-2"><a href="#cb72-2" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Forecasted GHG intensity in year&quot;</span>, years[i], <span class="st">&quot;by Random Forest Model:&quot;</span>, predictions_rf[i]))</span>
+<span id="cb72-3"><a href="#cb72-3" tabindex="-1"></a>}</span></code></pre></div>
+<pre><code>## [1] &quot;Forecasted GHG intensity in year 2021 by Random Forest Model: 238.884748862835&quot;
+## [1] &quot;Forecasted GHG intensity in year 2022 by Random Forest Model: 239.020841667414&quot;
+## [1] &quot;Forecasted GHG intensity in year 2023 by Random Forest Model: 239.001278112189&quot;
+## [1] &quot;Forecasted GHG intensity in year 2024 by Random Forest Model: 238.986537999535&quot;
+## [1] &quot;Forecasted GHG intensity in year 2025 by Random Forest Model: 238.822485230703&quot;
+## [1] &quot;Forecasted GHG intensity in year 2026 by Random Forest Model: 238.817168423581&quot;
+## [1] &quot;Forecasted GHG intensity in year 2027 by Random Forest Model: 238.817168423581&quot;
+## [1] &quot;Forecasted GHG intensity in year 2028 by Random Forest Model: 238.797604868357&quot;
+## [1] &quot;Forecasted GHG intensity in year 2029 by Random Forest Model: 238.797604868357&quot;
+## [1] &quot;Forecasted GHG intensity in year 2030 by Random Forest Model: 238.797604868357&quot;</code></pre>
 </div>
 </div>
 
