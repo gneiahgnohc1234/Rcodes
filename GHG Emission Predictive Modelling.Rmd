@@ -9,7 +9,6 @@ output:
         code_folding: hide
 ---
 
-
 ```{r echo=FALSE}
 time <- format(Sys.time(),"%a %b %d %X %Y")
 ```
@@ -38,6 +37,7 @@ summary(data)
 ## 1.0.3 Calculate total ghg over total gdp
 
 ```{r}
+# Sum Up all GHG and GDP of each sector then divide by each other
 data$ghg_intensity <- rowSums(data[, 25:34])/rowSums(data[, 2:8])
 head(data)
 ```
@@ -45,7 +45,8 @@ head(data)
 # 2.0 Modelling
 ## 2.0.1 Multivariate Regression
 
-```{r}
+```{r message=FALSE, warning=FALSE}
+# Our response variable to be predicted will be ghg_intensity
 predictor_variables <- data[,2:23]
 response_variable <- data.frame(data[,ncol(data)])
 names(response_variable) <- "ghg_intensity"
@@ -63,8 +64,9 @@ highly_correlated
 # Fit a multivariate regression model using selected features
 selected_features <- highly_correlated
 print(selected_features)
+
 response_variable <- "ghg_intensity"
-lm_model <- lm(as.formula(paste(response_variable, "~", paste(selected_features[-1], collapse = " + "))), data = data)
+lm_model <- lm(as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + "))), data = data)
 
 # Print the summary of the model
 summary(lm_model)
@@ -80,7 +82,7 @@ cv <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
 # Train the model using cross-validation
 lm_model_cv <- train(
-  as.formula(paste(response_variable, "~", paste(selected_features[-1], collapse = " + "))),
+  as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + "))),
   data = data,
   method = "lm",
   trControl = cv
@@ -100,7 +102,7 @@ plot(lm_model$fitted.values, data$ghg_intensity,
 # Add a line to show where fitted values equal actual values
 abline(0, 1, col = "red")
 
-# This will add points with an offset for visibility
+# Add points with an offset for visibility
 points(lm_model$fitted.values, data$ghg_intensity + residuals,
        col = "green", pch = 4)
 
@@ -136,21 +138,13 @@ print(comparison)
 # install.packages("randomForest")
 library(randomForest)
 
-# Assuming you have predictor_variables and response_variable defined
-predictor_variables <- data[,2:23]
-response_variable <- data.frame(data[,ncol(data)])
-names(response_variable) <- "ghg_intensity"
-
-# Compute the correlation matrix
-correlation <- cor(predictor_variables, response_variable)
-
-# Identify highly correlated variables
-highly_correlated <- rownames(correlation)[correlation > 0.7 | correlation < -0.7]
-
 # Fit a random forest model using selected features
 selected_features <- highly_correlated
+selected_features
+
 response_variable <- "ghg_intensity"
-rf_formula <- as.formula(paste(response_variable, "~", paste(selected_features[-1], collapse = " + ")))
+
+rf_formula <- as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + ")))
 rf_model <- randomForest(rf_formula, data = data)
 
 # Perform cross-validation
@@ -235,4 +229,3 @@ for (i in 1:length(years)) {
   print(paste("Forecasted GHG intensity in year", years[i], "by Random Forest Model:", predictions_rf[i]))
 }
 ```
-
