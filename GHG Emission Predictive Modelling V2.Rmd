@@ -1,0 +1,232 @@
+---
+title: "Time Series Modelling on GHG"
+output: 
+  html_document:
+        toc: yes
+        toc_float: yes
+        theme: cosmo
+        highlight: espresso
+        code_folding: hide
+---
+
+```{r echo=FALSE}
+time <- format(Sys.time(),"%a %b %d %X %Y")
+```
+
+The current time is `r time`.
+
+# 1.0 Data Preparation
+## 1.0.1 Load required libraries
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(forecast)
+library(fpp2)
+library(dplyr)
+library(ggplot2)
+```
+
+## 1.0.2 Load dataset
+
+```{r}
+data <- read.csv("https://raw.githubusercontent.com/data-cracker/datasets/main/MasterDataSet.csv")
+glimpse(data)
+summary(data)
+```
+
+## 1.0.3 Calculate total ghg over total gdp
+
+```{r}
+# Sum Up all GHG and GDP of each sector then divide by each other
+data$ghg_intensity <- rowSums(data[, 25:34])/rowSums(data[, 2:8])
+head(data)
+```
+
+# 2.0 Modelling
+## 2.0.1 Multivariate Regression
+
+```{r message=FALSE, warning=FALSE}
+# Our response variable to be predicted will be ghg_intensity
+predictor_variables <- data[,2:23]
+response_variable <- data.frame(data[,ncol(data)])
+names(response_variable) <- "ghg_intensity"
+
+glimpse(predictor_variables)
+head(response_variable)
+
+# Compute the correlation matrix
+correlation <- cor(predictor_variables, response_variable)
+correlation
+
+highly_correlated <- rownames(correlation)[correlation > 0.7 | correlation < -0.7]
+highly_correlated
+
+# Fit a multivariate regression model using selected features
+selected_features <- highly_correlated
+print(selected_features)
+
+response_variable <- "ghg_intensity"
+lm_model <- lm(as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + "))), data = data)
+
+# Print the summary of the model
+summary(lm_model)
+
+# Checking if data is overfit by cross validation
+# Load required libraries
+# install.packages("caret")
+library(caret)
+
+# Set up cross-validation
+set.seed(123)  # for reproducibility
+cv <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
+
+# Train the model using cross-validation
+lm_model_cv <- train(
+  as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + "))),
+  data = data,
+  method = "lm",
+  trControl = cv
+)
+
+# Print cross-validated results
+print(lm_model_cv)
+
+residuals <- resid(lm_model)
+
+# Plot Fitted values vs Actual values
+plot(lm_model$fitted.values, data$ghg_intensity,
+     main = "Fitted Values vs Actual Values",
+     xlab = "Fitted Values", ylab = "Actual Values",
+     col = "blue", pch = 20)
+
+# Add a line to show where fitted values equal actual values
+abline(0, 1, col = "red")
+
+# Add points with an offset for visibility
+points(lm_model$fitted.values, data$ghg_intensity + residuals,
+       col = "green", pch = 4)
+
+```
+
+## 2.0.2 Model Evaluation - Multivariate Regression
+
+```{r}
+# Predict the response variable for the entire dataset
+predictions <- predict(lm_model, newdata = data[selected_features])
+
+# Evaluate metrics
+mse <- mean((data$ghg_intensity - predictions)^2)
+rmse <- sqrt(mse)
+mae <- mean(abs(data$ghg_intensity - predictions))
+r_squared <- 1 - (sum((data$ghg_intensity - predictions)^2) / sum((data$ghg_intensity - mean(data$ghg_intensity))^2))
+
+# Print the metrics
+cat("Mean Squared Error (MSE):", mse, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+cat("R-squared (R²):", r_squared, "\n")
+
+# Print a comparison between actual and predicted values
+comparison <- data.frame(Actual = data$ghg_intensity, Predicted = predictions)
+print(comparison)
+```
+
+## 2.0.3 Random Forest
+
+```{r}
+# Install and load the necessary library
+# install.packages("randomForest")
+library(randomForest)
+
+# Fit a random forest model using selected features
+selected_features <- highly_correlated
+selected_features
+
+response_variable <- "ghg_intensity"
+
+rf_formula <- as.formula(paste(response_variable, "~", paste(selected_features, collapse = " + ")))
+rf_model <- randomForest(rf_formula, data = data)
+
+# Perform cross-validation
+cv_results <- randomForest::randomForest(rf_formula, data = data, nfold = 5)
+cv_results
+
+# Print the importance of variables
+print(importance(rf_model))
+
+# Print the summary of the model
+print(rf_model)
+```
+
+## 2.0.4 Model Evaluation - Random Forest
+
+```{r}
+# Predict the response variable for the entire dataset
+predictions <- predict(rf_model, newdata = data[selected_features])
+
+# Evaluate metrics
+mse <- mean((data$ghg_intensity - predictions)^2)
+rmse <- sqrt(mse)
+mae <- mean(abs(data$ghg_intensity - predictions))
+r_squared <- 1 - (sum((data$ghg_intensity - predictions)^2) / sum((data$ghg_intensity - mean(data$ghg_intensity))^2))
+
+# Print the metrics
+cat("Mean Squared Error (MSE):", mse, "\n")
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
+cat("Mean Absolute Error (MAE):", mae, "\n")
+cat("R-squared (R²):", r_squared, "\n")
+
+# Print a comparison between actual and predicted values
+comparison <- data.frame(Actual = data$ghg_intensity, Predicted = predictions)
+print(comparison)
+```
+
+## 2.0.5 ARIMA Model Time Series Forecasting
+
+The ARIMA model is represented as ARIMA(p, d, q), where:
+
+'p' is the order of the autoregressive component.
+'d' is the order of differencing needed for stationarity.
+'q' is the order of the moving average component.
+
+```{r}
+forecast_list <- list()
+
+for (feature in selected_features) {
+    ts_data <- ts(data[[feature]], start = min(data$Year), frequency = 1)
+
+    # Fit an ARIMA model to the training data
+    fit <- auto.arima(ts_data)
+
+    # Make forecasts on the test data
+    forecast_values <- forecast(fit, h = 10)
+
+    forecast_list[[feature]] <- forecast_values$mean
+}
+
+forecast_features <- data.frame(forecast_list)
+forecast_features
+head(forecast_features)
+
+# Use the trained regression model to make predictions for the next ten years
+print("Forecasted values for GHG intensity by Multivariate Regression Model")
+predictions_lm <- predict(lm_model, newdata = forecast_features)
+predictions_lm
+
+# Use the trained random forest model to make predictions for the next ten years
+print("Forecasted values for GHG intensity by Random Forest Model")
+predictions_rf <- predict(rf_model, newdata = forecast_features)
+predictions_rf
+
+# Get the forecasted GHG intensity in year 2030 for both models
+years <- 2021:2030
+
+for (i in 1:length(years)) {
+  print(paste("Forecasted GHG intensity in year", years[i], "by Regression Model:", predictions_lm[i]))
+}
+
+for (i in 1:length(years)) {
+  print(paste("Forecasted GHG intensity in year", years[i], "by Random Forest Model:", predictions_rf[i]))
+}
+```
+
