@@ -1,4 +1,4 @@
-This resposity created by Rocketeer for 7001 Assignment. 
+This respository created by Rocketeer for 7001 Assignment with the project description as below:
 Title : GHG emission intensity forecasting for Malaysia
 Dataset collected by the following sources:
 1. Malaysia Energy Information Hub (MEIH)
